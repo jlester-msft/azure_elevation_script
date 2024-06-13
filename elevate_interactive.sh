@@ -18,6 +18,7 @@
 start_time=$SECONDS
 
 readonly SCRIPT_NAME="elevate_interactive"
+readonly COMPLEX_TABLE="false"
 
 # shellcheck disable=SC2317
 perform_activation(){
@@ -232,12 +233,6 @@ if [[ -z "$selected_lines" ]]; then
     exit 1
 fi
 
-# Display the selected roles as a table:
-gum log -t RFC3339 -s -l info "Selected PIM roles are:"
-table_lines=("Role Name:Scope Name")
-table_lines+=("${selected_lines[@]}")
-IFS=$'\n'; echo "${table_lines[*]}" | gum table --print --separator=":" --border thick
-
 # Convert the selected roles from "Role Name" and "Scope Name" to "scope" and "Role Name" as this is what az-pim 0.0.2 expects:
 role_scope_pairs=()
 IFS=$'\n'
@@ -254,6 +249,26 @@ done
 # Do a single jq query to get back the selected roles (Role Name), scopes (the Azure resource ID), and scope names (Scope Name)
 selected_role_json=$(echo "$pim_json" | jq --argjson pairs "$role_scope_json" '. as $json | $pairs | map((. as $pair | $json[] | select((.role | sub("^ *"; "") | sub(" *$"; "")) == $pair.role and (.scope_name | sub("^ *"; "") | sub(" *$"; "")) == $pair.scope_name) | {scope: .scope, scope_name: .scope_name, role: .role}))')
 
+# Convert the selected json into an tab separated array of scope\tscope_name\trole so we can iterate over them in bash
+selected_roles=$(echo "$selected_role_json" | jq -r '(.[] | [.scope, .scope_name, .role]) | @tsv')
+
+# Display the selected roles as a table:
+gum log -t RFC3339 -s -l info "Selected PIM roles are:"
+if [[ $COMPLEX_TABLE == "true" ]]; then
+    # Extract role name + subID, resource group, provider, type, resource name:
+    selected_role_scope_name=$(echo "$selected_role_json" | jq -r '.[] | [.role, .scope] | @tsv')
+    selected_table_fields=$(echo "${selected_role_scope_name[*]}" | awk -F '/' 'BEGIN {OFS=":"} {print $1, ($3 ? $3 : ""), ($5 ? $5 : ""), ($7 ? $7 : ""), ($8 ? substr($0, index($0,$8)) : "")}')
+    table_lines=("Role Name:Subscription ID:Resource Group:Provider:Resource Name")
+    table_lines+=("${selected_table_fields[@]}")
+else
+    # Just print the role name and scope name
+    table_lines=("Role Name:Scope Name")
+    selected_table_fields=$selected_lines
+fi
+table_lines+=("${selected_table_fields[@]}")
+IFS=$'\n'; echo "${table_lines[*]}" | gum table --print --separator=":" --border thick
+
+
 if [[ "$write_to_file" == "true" ]]; then
     # Write scope and role to the output file, provided the output file doesn't already exist
     if [[ -f "$output_file" ]]; then
@@ -269,9 +284,6 @@ if [[ "$write_to_file" == "true" ]]; then
     exit 0
 fi
 
-# Convert the selected json into an tab separated array of scope\tscope_name\trole so we can iterate over them in bash
-selected_lines=$(echo "$selected_role_json" | jq -r '(.[] | [.scope, .scope_name, .role]) | @tsv')
-
 # Export the function and variables so parallel can access them
 export -f perform_activation
 export az_pim_path
@@ -280,7 +292,7 @@ export duration
 
 
 # Activate the selected roles using az-pim in parallel
-IFS=$'\n' read -d '' -r -a json_line <<< "$selected_lines"
+IFS=$'\n' read -d '' -r -a json_line <<< "$selected_roles"
 num_jobs=${#json_line[@]}
 gum log -t RFC3339 -s -l info "Activating PIM roles in parallel, $max_jobs elevations at a time, with $num_jobs activations to complete.."
 # printf "%s\n" "${json_line[@]}" | parallel --ungroup -j $max_jobs 'perform_activation "{}" '"$duration" "'"${justification//\'/\'\\\'\'}"'" &
@@ -296,6 +308,6 @@ script_runtime=$(( SECONDS - start_time ))
 gum style \
 	--foreground 212 --border-foreground 212 --border double \
 	--align center --width 50 --margin "1 2" --padding "2 4" \
-    'Activations completed' "Activated $(echo "$selected_lines" | wc -l) roles"
+    'Activations completed' "Activated $(echo "$selected_roles" | wc -l) roles"
 gum log -t RFC3339 -s -l info "Script execution time: $script_runtime seconds"
 exit 0

@@ -238,7 +238,7 @@ fi
 gum log -t RFC3339 -s -l info "Selected PIM roles are:"
 if [[ $COMPLEX_TABLE == "true" ]]; then
     # Extract role name + subID, resource group, provider, type, resource name:
-    selected_table_fields=$( echo "${selected_lines[*]}" | awk -F '/' 'BEGIN {OFS=":"} {print $1, $3, $5, $7, substr($0, index($0,$8))}')
+    selected_table_fields=$(echo "${selected_lines[*]}" | awk -F '/' 'BEGIN {OFS=":"} {print $1, ($3 ? $3 : ""), ($5 ? $5 : ""), ($7 ? $7 : ""), ($8 ? substr($0, index($0,$8)) : "")}')
     table_lines=("Role Name:Subscription ID:Resource Group:Provider:Resource Name")
     table_lines+=("${selected_table_fields[@]}")
 else
@@ -266,7 +266,7 @@ if [[ "$write_to_file" == "true" ]]; then
 fi
 
 # Convert the selected json into an tab separated array of scope\tscope_name\trole so we can iterate over them in bash
-selected_lines=$(jq -r '(.[] | [.scope, .scope_name, .role]) | @tsv' "$input_file")
+selected_roles=$(jq -r '(.[] | [.scope, .scope_name, .role]) | @tsv' "$input_file")
 
 # Export the function and variables so parallel can access them
 export -f perform_activation
@@ -276,7 +276,7 @@ export duration
 
 
 # Activate the selected roles using az-pim in parallel
-IFS=$'\n' read -d '' -r -a json_line <<< "$selected_lines"
+IFS=$'\n' read -d '' -r -a json_line <<< "$selected_roles"
 num_jobs=${#json_line[@]}
 gum log -t RFC3339 -s -l info "Activating PIM roles in parallel, $max_jobs elevations at a time, with $num_jobs activations to complete.."
 # printf "%s\n" "${json_line[@]}" | parallel --ungroup -j $max_jobs 'perform_activation "{}" '"$duration" "'"${justification//\'/\'\\\'\'}"'" &
@@ -292,6 +292,6 @@ script_runtime=$(( SECONDS - start_time ))
 gum style \
 	--foreground 212 --border-foreground 212 --border double \
 	--align center --width 50 --margin "1 2" --padding "2 4" \
-    'Activations completed' "Activated $(echo "$selected_lines" | wc -l) roles"
+    'Activations completed' "Activated $(echo "$selected_roles" | wc -l) roles"
 gum log -t RFC3339 -s -l info "Script execution time: $script_runtime seconds"
 exit 0
