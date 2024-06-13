@@ -61,6 +61,7 @@ install_tools() {
         echo "Installing az-pim.."
         if ! command -v cargo &> /dev/null; then
             echo "cargo not found, installing Rust.."
+            sudo apt update
             sudo apt install rustc cargo
         fi
         cargo install --git https://github.com/demoray/azure-pim-cli.git --tag 0.0.2
@@ -68,12 +69,14 @@ install_tools() {
         echo "az-pim already installed at: $az_pim_path"
     fi
     if ! command -v gum &> /dev/null; then
+        sudo apt update
         sudo apt install gum
     else
         echo "gum already installed at: $(which gum)"
     fi
     if ! command -v jq &> /dev/null; then
         echo "Installing jq using apt.."
+        sudo apt update
         sudo apt install jq
     else
         echo "jq already installed at: $(which jq)"
