@@ -68,16 +68,7 @@ install_tools() {
         echo "az-pim already installed at: $az_pim_path"
     fi
     if ! command -v gum &> /dev/null; then
-        if command -v brew &> /dev/null; then
-            echo "Installing charmbracelt/gum using brew"
-            brew install gum
-        else
-            echo "Brew not found, installing from RPM.."
-            temp_dir=$(mktemp -d)
-            curl -LO https://github.com/charmbracelet/gum/releases/download/v0.14.1/gum-0.14.1-1.x86_64.rpm -o "${temp_dir}/gum-0.14.1-1.x86_64.rpm"
-            sudo rpm -i "${temp_dir}/gum-0.14.1-1.x86_64.rpm"
-            rm -r "${temp_dir}"
-        fi
+        sudo apt install gum
     else
         echo "gum already installed at: $(which gum)"
     fi
