@@ -132,13 +132,13 @@ parse_duration() {
     if [[ $duration == *h ]]; then
         # If the duration is in hours, multiply by 60
         duration=${duration%h} # Remove the 'h'
-        duration=$(echo "int($duration * 60)" | bc)
+        duration=$(echo "scale=0; $duration * 60" | bc)
     elif [[ $duration == *m ]]; then
         # If the duration is in minutes, just remove the 'm'
         duration=${duration%m}
     elif [[ $duration =~ ^[0-9]+$ ]]; then
         # If the duration is a number, assume it's in hours and convert to minutes
-        duration=$(echo "int($duration * 60)" | bc)
+        duration=$(echo "scale=0; $duration * 60" | bc)
     fi
     echo "$duration"
 }
