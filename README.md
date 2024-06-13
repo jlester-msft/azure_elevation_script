@@ -35,6 +35,10 @@ Options:
        Display this help message
 ```
 
+### Example video:
+![realtime demo of elevate_interactive.sh](images/sanitized_elevate_interactive.gif)
+
+
 ## elevate_persona.sh
 
 Useful when you already know what personas (a set of one or more Azure roles) you would like to elevate to. Or you have multiple sets of personas you want to elevate. For example, `elevate_persona.sh -f "subscription_owner.json" -d 30m -j "Adjusting subscription permissions for Defender"` or `elevate_persona.sh -f "billing_reviewer.json" -d 30m -j "Quarterly resource review"` You can use `elevate_interactive.sh -w 'persona_name.json'` to generate a single persona. Then use `elevate_persona.sh` to activate that persona.
@@ -60,3 +64,6 @@ Options:
   -h
        Display this help message
 ```
+
+### Example video:
+![realtime demo of elevate_persona.sh](images/sanitized_elevate_persona.gif)
