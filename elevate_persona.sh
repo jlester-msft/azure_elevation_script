@@ -74,7 +74,7 @@ install_tools() {
     fi
     if ! command -v gum &> /dev/null; then
         temp_file=$(mktemp)
-        curl -L -o "${temp_file}" https://github.com/charmbracelet/gum/releases/download/v0.14.1/gum_0.14.1_amd64.deb
+        curl -L -o "${temp_file}" https://github.com/charmbracelet/gum/releases/download/v0.13.0/gum_0.13.0_amd64.deb
         sudo dpkg -i "$temp_file"
         rm "$temp_file"
     else
