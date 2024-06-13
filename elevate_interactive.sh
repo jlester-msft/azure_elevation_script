@@ -69,8 +69,10 @@ install_tools() {
         echo "az-pim already installed at: $az_pim_path"
     fi
     if ! command -v gum &> /dev/null; then
-        sudo apt update
-        sudo apt install gum
+        temp_file=$(mktemp)
+        curl -L -o "${temp_file}" https://github.com/charmbracelet/gum/releases/download/v0.14.1/gum_0.14.1_amd64.deb
+        sudo dpkg -i "$temp_file"
+        rm "$temp_file"
     else
         echo "gum already installed at: $(which gum)"
     fi
