@@ -212,7 +212,6 @@ parse_args() {
     usernane=$(az account show --query user.name -o tsv)
     if [[ $usernane != "SC-"* ]]; then
         gum log -t RFC3339 -s -l warn "Please login to the Azure CLI with an account that has a SC- prefix, logged in as $usernane"
-        exit 1
     fi
 }
 parse_args "$@"
