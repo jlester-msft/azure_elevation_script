@@ -64,6 +64,11 @@ install_tools() {
             sudo apt update
             sudo apt install rustc cargo
         fi
+        if ! dpkg-query -W -f='${Status}' libssl-dev 2>/dev/null | grep -q "ok installed"; then
+            echo "libssl-dev not found, installing..."
+            sudo apt update
+            sudo apt install libssl-dev
+        fi
         cargo install --git https://github.com/demoray/azure-pim-cli.git --tag 0.0.2
     else
         echo "az-pim already installed at: $az_pim_path"
